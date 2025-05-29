@@ -1,0 +1,141 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Arquitectura Hexagonal Pragmática - Reglas de Desarrollo
+
+## 🏗️ ESTRUCTURA DE CARPETAS OBLIGATORIA
+
+```
+src/
+├── domain/                    # Business core (sin dependencias externas)
+│   ├── entities/              # Entidades de negocio (User, Product, Order)
+│   ├── events/                # Eventos de dominio (UserCreated, OrderPlaced)
+│   ├── ports/                 # Interfaces/contratos (UserRepository, EmailService)
+│   └── errors/                # Errores específicos de dominio
+├── usecases/                  # Lógica de aplicación (un caso de uso = una carpeta)
+│   ├── create_user/           # create_user.go, create_user_test.go
+│   ├── authenticate_user/     # authenticate_user.go, authenticate_user_test.go
+│   ├── place_order/           # place_order.go, place_order_test.go
+│   └── [usecase_name]/        # Cada caso de uso en su propia carpeta
+├── infra/                     # Implementaciones externas
+│   ├── persistence/           # Implementaciones de persistencia
+│   │   ├── dynamo/            # DynamoDB
+│   │   ├── postgres/          # PostgreSQL
+│   │   └── memory/            # In-memory para testing
+│   ├── messaging/             # Publishers de eventos (RabbitMQ, Kafka)
+│   ├── cache/                 # Implementaciones de caché (Redis, in-memory)
+│   └── external/              # APIs de terceros
+└── presentation/              # Capa de entrega (NO crear subcarpetas hasta necesitarlas)
+    ├── handlers/              # HTTP handlers directamente
+    ├── middlewares/           # Authentication, logging, CORS, etc.
+    ├── dtos/                  # Request/response objects
+    └── routes/                # Definiciones de rutas
+```
+
+## 🎯 PRINCIPIOS FUNDAMENTALES
+
+### YAGNI (You Aren't Gonna Need It)
+- NO crear carpetas hasta que realmente las necesites
+- NO abstraer hasta tener múltiples implementaciones
+- Ejemplo: NO crear `/http/` en presentation hasta tener gRPC
+
+### KISS (Keep It Simple, Stupid)
+- Imports más cortos posibles
+- Estructura autodocumentada
+- Una responsabilidad por carpeta
+
+### Dependency Inversion
+- domain/ NUNCA importa de otras capas
+- usecases/ solo importa de domain/
+- adapters/ implementa ports/ de domain/
+- presentation/ solo importa usecases/ y domain/
+
+## 📁 REGLAS DE ORGANIZACIÓN
+
+### Domain Layer
+- **entities/**: Structs de negocio puros, sin dependencias externas
+- **events/**: Eventos que representan cambios importantes en el negocio
+- **ports/**: Interfaces que definen contratos (repositories, services)
+- **errors/**: Errores específicos del dominio de negocio
+
+### Use Cases Layer
+- **Una carpeta por caso de uso**: createuser/, placeorder/, etc.
+- **Naming**: Verbos en infinitivo, descriptivos
+- **Contenido**: usecase.go, usecase_test.go, dtos específicos si necesarios
+- **NO agrupar por entidad**: Evitar user/, order/ - usar funcionalidad específica
+
+### Adapters Layer
+- **persistence/**: Implementaciones de repositories
+- **messaging/**: Publishers de eventos
+- **cache/**: Implementaciones de caché
+- **external/**: Clientes para APIs externas
+- **Subcarpetas por tecnología**: dynamo/, postgres/, redis/
+
+### Presentation Layer
+- **handlers/**: HTTP handlers directamente (sin /http/ hasta necesitarlo)
+- **middlewares/**: Cross-cutting concerns
+- **dtos/**: Request/response objects
+- **routes/**: Configuración de rutas
+
+## 🔄 FLUJO DE DEPENDENCIAS
+
+```
+presentation/ → usecases/ → domain/
+     ↓              ↓
+adapters/ ←←←←← ports/ (domain/)
+```
+
+## 📝 CONVENCIONES DE NAMING
+
+### Archivos
+- **Snake_case**: `create_user.go`, `place_order.go`
+- **Tests**: `create_user_test.go`
+- **Interfaces**: `UserRepository`, `EmailService` (PascalCase)
+
+### Packages
+- **Snake_case**: `create_user`, `place_order`
+- **Descriptivos**: Que el import sea autodocumentado
+
+### Imports
+- **Relativos desde src/**: `domain/entities`, `usecases/createuser`
+- **Cortos y claros**: Evitar anidación innecesaria
+
+## ⚡ REGLAS DE REFACTORING
+
+### Cuándo crear subcarpetas
+- **presentation/**: Solo cuando tengas múltiples protocolos (HTTP + gRPC)
+- **adapters/**: Solo cuando tengas múltiples implementaciones
+- **usecases/**: Solo cuando tengas lógica compartida entre casos de uso
+
+### Cómo evolucionar
+1. **Empieza simple**: Archivos directos en carpetas principales
+2. **Detecta duplicación**: Cuando veas patrones repetidos
+3. **Refactoriza**: Mueve archivos a subcarpetas según necesidad real
+
+## 🚫 ANTI-PATRONES A EVITAR
+
+- **NO** crear carpetas vacías "por si acaso"
+- **NO** agrupar casos de uso por entidad si no hay lógica compartida
+- **NO** crear abstracciones hasta tener múltiples implementaciones
+- **NO** importar desde capas superiores a inferiores
+- **NO** poner lógica de negocio en presentation/ o adapters/
+
+## ✅ CHECKLIST DE VALIDACIÓN
+
+Antes de crear código, pregúntate:
+- [ ] ¿Esta carpeta tiene contenido real ahora?
+- [ ] ¿El import resultante es claro y corto?
+- [ ] ¿Estoy respetando el flujo de dependencias?
+- [ ] ¿Puedo explicar por qué esta estructura en una frase?
+- [ ] ¿Un desarrollador nuevo encontraría esto intuitivo?
+
+## 🎯 OBJETIVO FINAL
+
+Crear una arquitectura que sea:
+- **Pragmática**: Basada en necesidades reales, no dogmas
+- **Evolutiva**: Puede crecer sin reestructuración masiva
+- **Autodocumentada**: Los imports y nombres explican el propósito
+- **Developer-friendly**: Fácil navegación y comprensión
+- **Testeable**: Cada capa puede probarse independientemente
