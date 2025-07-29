@@ -2,8 +2,8 @@ package memory
 
 import (
 	"context"
-	"minhex/src/domain/entities"
-	"minhex/src/domain/ports"
+	"minhex/src/domain/users/entities"
+	userPorts "minhex/src/domain/users/ports"
 	"sync"
 )
 
@@ -12,7 +12,7 @@ type UserRepository struct {
 	mu    sync.RWMutex
 }
 
-func NewUserRepository() ports.UserRepository {
+func NewUserRepository() userPorts.UserRepository {
 	return &UserRepository{
 		users: make(map[string]*entities.User),
 	}

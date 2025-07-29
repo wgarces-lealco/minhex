@@ -2,7 +2,7 @@ package ports
 
 import (
 	"context"
-	"minhex/src/domain/entities"
+	"minhex/src/domain/users/entities"
 )
 
 type UserRepository interface {

@@ -2,47 +2,55 @@ package handlers
 
 import (
 	"encoding/json"
-	"minhex/src/usecases/create_user"
 	"net/http"
+
+	"minhex/src/usecases/create_user"
+	"minhex/src/usecases/get_user"
 )
 
 type UserHandler struct {
-	createUserUC *create_user.UseCase
+	createUserUC create_user.CreateUserUseCase
+	getUserUC    get_user.GetUserUseCase
 }
 
-func NewUserHandler(createUserUC *create_user.UseCase) *UserHandler {
+func NewUserHandler(createUserUC create_user.CreateUserUseCase, getUserUC get_user.GetUserUseCase) *UserHandler {
 	return &UserHandler{
 		createUserUC: createUserUC,
+		getUserUC:    getUserUC,
 	}
 }
 
-type CreateUserRequest struct {
-	Email string `json:"email"`
-	Name  string `json:"name"`
-}
-
-type CreateUserResponse struct {
-	UserID string `json:"user_id"`
-}
-
 func (h *UserHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	var req CreateUserRequest
+	var req create_user.Request
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	response, err := h.createUserUC.Execute(r.Context(), create_user.Request{
-		Email: req.Email,
-		Name:  req.Name,
-	})
+	response, err := h.createUserUC.Execute(req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(CreateUserResponse{
-		UserID: response.UserID,
-	})
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("id")
+	if userID == "" {
+		http.Error(w, "User ID is required", http.StatusBadRequest)
+		return
+	}
+
+	req := get_user.Request{ID: userID}
+	response, err := h.getUserUC.Execute(req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
