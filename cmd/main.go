@@ -1,8 +1,8 @@
 package main
 
 import (
+	"fmt"
 	commercePorts "minhex/src/domain/commerces/ports"
-	"minhex/src/domain/shared/ports"
 	userPorts "minhex/src/domain/users/ports"
 	"minhex/src/infra/messaging/sqs"
 	"minhex/src/infra/persistence/memory"
@@ -11,9 +11,28 @@ import (
 	"minhex/src/usecases/create_commerce"
 	"minhex/src/usecases/create_user"
 	"minhex/src/usecases/get_user"
+	"time"
 )
 
 func main() {
+	now := time.Now()
+	fmt.Println(now)
+
+	locationNow := now.Location()
+	fmt.Println(locationNow)
+
+	utcNow := now.UTC()
+	fmt.Println(utcNow)
+
+	colombiaNow := now.In(time.FixedZone("America/Bogota", -5*3600))
+	fmt.Println(colombiaNow)
+
+	salvadorNow := now.In(time.FixedZone("America/El_Salvador", -6*3600))
+	fmt.Println(salvadorNow)
+
+	chileNow := now.In(time.FixedZone("America/Santiago", -4*3600))
+	fmt.Println(chileNow)
+
 	// 🎯 DEMO: Arquitectura Hexagonal - Microservicios Orientados a Negocio
 
 	// ===============================================
@@ -21,8 +40,7 @@ func main() {
 	// ===============================================
 
 	// 📨 MESSAGING: Descomenta la que quieras usar
-	var eventPublisher ports.EventPublisher
-	eventPublisher = sqs.NewPublisher() // ✅ AWS SQS
+	eventPublisher := sqs.NewPublisher() // ✅ AWS SQS
 	// eventPublisher = rabbitmq.NewPublisher() // 🔄 RabbitMQ
 
 	// 💾 PERSISTENCE: Descomenta la que quieras usar
